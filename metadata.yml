@@ -1,18 +1,18 @@
-Identifier: eos2b6f
-Slug: pkasolver
-Title: Microstate pKa values
-Description: This model employs transfer learning with graph neural networks in order to predict micro-state pKa values of small molecules. The model enumerates the molecule's protonation states and predicts its pKa values. It was trained in two phases, first, using a large ChEMBL dataset and then fine-tuning the model for a small training set of molecules with available pKa values. The model in this repository is the pkasolver-light, which does not require an Epik license and is limited to monoprotic molecules.
-Mode: Pretrained
+Identifier: eos1pu1
+Slug: cardiotox-dictrank
+Title: Cardiotoxicity Classifier
+Description: Prediction of drug-induced cardiotoxicity as a binary classification of cardiotoxicity risk along with a probability score depicting the confidence level of the prediction. Classification is based on the chemical data such as SMILES representations of compounds and a variety of descriptors such as Morgan fingerprints and Mordred physicochemical descriptors that describe the molecular structure of the drug interactions. Biological data is also used including gene expression and cellular paintings after drug interactions. The DICTrank (Drug-Induced Cardiotoxicity Rank) dataset provides the ground truth labels for the training data.
+Mode: Retrained
 Input: Compound
 Input Shape: Single
-Task: Regression
-Output: Experimental value
+Task: Classification
+Output: Probability, Boolean
 Output Type: Float
-Output Shape: Single
-Interpretation: Acidity of a molecule (lower pKa indicates stronger acid)
+Output Shape: List
+Interpretation: The model provides a probability score indicating the likelihood of a compound being cardiotoxic
 Tag:
-  - pKa
-  - ADME
-Publication: https://www.biorxiv.org/content/10.1101/2022.01.20.476787v1
-Source Code: https://github.com/mayrf/pkasolver
-License: MIT
+  - Cardiotoxicity
+  - DrugBank
+Publication: https://doi.org/10.1021/acs.jcim.3c01834
+Source Code: https://github.com/srijitseal/DICTrank
+License: None
