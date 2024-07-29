@@ -1,54 +1,48 @@
-# imports
-from genericpath import isfile
 import os
-import csv
 import sys
 import pandas as pd
 import numpy as np
-from rdkit import Chem
-from rdkit.Chem.Descriptors import MolWt
-from pathlib import Path
-path_root = Path(__file__).parents[2]
-sys.path.append(str(path_root))
-
-from framework.pkasolver.pkasolver.query import calculate_microstate_pka_values 
-
-# parse arguments
-input_file = sys.argv[1]
-output_file = sys.argv[2]
-#dimorph_file = sys.argv[3]
+import csv
+from functions import load_model, load_data_columns, preprocess_smiles, run_predictions
 
 
-# current file directory
-root = os.path.dirname(os.path.abspath(__file__))
+if __name__ == '__main__':
+   input_file = sys.argv[1]
+   output_file = sys.argv[2]
 
-dimorph_file = os.path.abspath(os.path.join(root, "..", "dimorphite_dl.pkl")) 
-print("dimorph_file", dimorph_file)
 
-# simplified version of pKa model: only the first pKa value
-def my_model(smiles_list):
-    output_df = pd.DataFrame(columns=["pka value", "pka stddev"])
-    for smi in smiles_list:
-        pka_vals = calculate_microstate_pka_values(Chem.MolFromSmiles(smi), output_path=dimorph_file)
-        if len(pka_vals) == 0:
-            output_df.loc[len(output_df.index)] = [np.NaN, np.NaN]
-        else:
-            output_df.loc[len(output_df.index)] = [pka_vals[0].pka, pka_vals[0].pka_stddev]
+   root = os.path.dirname(os.path.abspath(__file__))
+   checkpoints_dir = os.path.abspath(os.path.join(root, "..", "..", "checkpoints"))
+   model_path = os.path.join(checkpoints_dir, 'FINAL_Physicochemical_model.sav')
+   columns_path = os.path.join(checkpoints_dir, 'data_columns.pkl')
 
-    return output_df
 
-# read SMILES from .csv file, assuming one column with header
-with open(input_file, "r") as f:
-    reader = csv.reader(f)
-    next(reader) # skip header
-    smiles_list = [r[0] for r in reader]
+   classifier = load_model(model_path)
+   data_columns = load_data_columns(columns_path)
+
+
+   smiles_list = []
+   with open(input_file, "r") as f:
+       reader = csv.reader(f)
+       next(reader)  # skip header
+       for row in reader:
+           smiles_list.append(row[0])
+   # Error Checking
+   if len(smiles_list) == 0:
+       print("Error: No valid SMILES strings found in the input file.")
+       sys.exit(1)
+   # Run predictions
+   df = preprocess_smiles(smiles_list)
+   probabilities, predictions = run_predictions(classifier, preprocess_smiles(smiles_list), data_columns)
+   input_len = len(smiles_list)
+   output_len = len(probabilities)
+   assert input_len == output_len, "Input and output lengths do not match"
+
     
-# run model
-outputs = my_model(smiles_list)
+   with open(output_file, "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Probability", "Prediction"])  # Header
+        for prob, pred in zip(probabilities, predictions):
+            writer.writerow([prob, pred])
 
-# write outputs to file (outputs is a pd dataframe)
-outputs.to_csv(output_file, index=False)
-
-# # remove dimorphite_dl output pkl file
-if os.path.isfile(dimorph_file):
-     os.remove(dimorph_file)
+  
